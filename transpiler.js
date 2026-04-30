@@ -148,8 +148,8 @@ function parser(tokens) {
         let token = tokens[current];
         if (!token) return null;
 
-        // Auto-inyectar MOSTRAR si la consulta empieza directamente con un COUNT(*)
-        if (token.type === 'IDENTIFIER' && token.value === 'COUNT(*)') {
+        // Auto-inyectar MOSTRAR si la consulta empieza con COUNT(*), SUM o AVG
+        if (token.type === 'IDENTIFIER' && (token.value === 'COUNT(*)' || token.value === 'SUM' || token.value === 'AVG')) {
             tokens.unshift({ type: 'KEYWORD', value: 'MOSTRAR', line: token.line, column: token.column });
             token = tokens[current]; // Re-leer token que ahora es MOSTRAR
         }

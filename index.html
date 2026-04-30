@@ -28,24 +28,32 @@
 </head>
 <body>
     <header>
-        <h1>Compilador DSL <span>Studio</span></h1>
-        <div class="toolbar" id="demoToolbar">
+        <!-- Fila superior: título + botones de utilidad -->
+        <div class="header-top">
+            <h1>Compilador DSL <span>Studio</span></h1>
+            <div class="header-actions">
+                <button id="voiceBtn" title="Entrada de voz">🎤 Voz</button>
+                <button onclick="openSchemaModal()" style="border-color: var(--accent); color: var(--accent);">📊 Esquema BD</button>
+                <button onclick="toggleHistory()" style="border-color:#a855f7; color:#a855f7;">📋 Historial</button>
+            </div>
+        </div>
+
+        <!-- Fila inferior: demos de consulta scrollable -->
+        <div class="demo-strip" id="demoToolbar">
+            <span class="demo-strip-label">🚀 Demo</span>
             <button data-query="muestra nombre de artists">① Artistas</button>
             <button data-query="dame titulo de albums donde ArtistId igual a 5">② Albums ID=5</button>
             <button data-query="listar nombre apellido de employees donde City igual a 'Calgary'">③ Calgary</button>
             <button data-query="dame nombre de tracks donde nombre que empiece con 'A'">④ LIKE A*</button>
-            <button data-query="dame nombre City de customers donde Country igual a 'Brazil' O Country igual a 'Germany'">⑤ OR</button>
-            <button data-query="muestra Total de invoices donde Total mayor a 15 Y BillingCity igual a 'Oslo'">⑥ AND</button>
+            <button data-query="dame nombre City de customers donde Country igual a 'Brazil' O Country igual a 'Germany'">⑤ OR País</button>
+            <button data-query="muestra Total de invoices donde Total mayor a 15 Y BillingCity igual a 'Oslo'">⑥ AND Oslo</button>
             <button data-query="listar nombre de tracks donde Composer sin">⑦ IS NULL</button>
-            <button data-query="ordena nombre de tracks">⑧ ORDER ASC</button>
+            <button data-query="ordena nombre de tracks">⑧ A→Z</button>
             <button data-query="muestra 10 invoices ordenados por Total descendente">⑨ TOP 10</button>
             <button data-query="cuantos artistas hay">⑩ COUNT</button>
             <button data-query="suma Total de invoices">⑪ SUM</button>
             <button data-query="dame nombre de tracks unir genres">⑫ JOIN</button>
-            <button onclick="openSchemaModal()" style="border-color: var(--accent); color: var(--accent);">📊 Esquema BD</button>
-            <button onclick="toggleHistory()" style="border-color:#a855f7; color:#a855f7;">📋 Historial</button>
         </div>
-
     </header>
 
     <main>
