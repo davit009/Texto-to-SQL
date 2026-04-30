@@ -1,0 +1,46 @@
+{
+    "employees": {
+        "columns": { "EmployeeId": "NUMERIC", "LastName": "STRING", "FirstName": "STRING", "Title": "STRING", "ReportsTo": "NUMERIC", "City": "STRING", "Country": "STRING" },
+        "relations": { "customers": "employees.EmployeeId = customers.SupportRepId" }
+    },
+    "customers": {
+        "columns": { "CustomerId": "NUMERIC", "FirstName": "STRING", "LastName": "STRING", "Company": "STRING", "City": "STRING", "Country": "STRING", "SupportRepId": "NUMERIC" },
+        "relations": { "employees": "customers.SupportRepId = employees.EmployeeId", "invoices": "customers.CustomerId = invoices.CustomerId" }
+    },
+    "invoices": {
+        "columns": { "InvoiceId": "NUMERIC", "CustomerId": "NUMERIC", "InvoiceDate": "STRING", "BillingCity": "STRING", "Total": "NUMERIC" },
+        "relations": { "customers": "invoices.CustomerId = customers.CustomerId", "invoice_items": "invoices.InvoiceId = invoice_items.InvoiceId" }
+    },
+    "invoice_items": {
+        "columns": { "InvoiceLineId": "NUMERIC", "InvoiceId": "NUMERIC", "TrackId": "NUMERIC", "UnitPrice": "NUMERIC", "Quantity": "NUMERIC" },
+        "relations": { "invoices": "invoice_items.InvoiceId = invoices.InvoiceId", "tracks": "invoice_items.TrackId = tracks.TrackId" }
+    },
+    "artists": {
+        "columns": { "ArtistId": "NUMERIC", "Name": "STRING" },
+        "relations": { "albums": "artists.ArtistId = albums.ArtistId" }
+    },
+    "albums": {
+        "columns": { "AlbumId": "NUMERIC", "Title": "STRING", "ArtistId": "NUMERIC" },
+        "relations": { "artists": "albums.ArtistId = artists.ArtistId", "tracks": "albums.AlbumId = tracks.AlbumId" }
+    },
+    "media_types": {
+        "columns": { "MediaTypeId": "NUMERIC", "Name": "STRING" },
+        "relations": { "tracks": "media_types.MediaTypeId = tracks.MediaTypeId" }
+    },
+    "genres": {
+        "columns": { "GenreId": "NUMERIC", "Name": "STRING" },
+        "relations": { "tracks": "genres.GenreId = tracks.GenreId" }
+    },
+    "tracks": {
+        "columns": { "TrackId": "NUMERIC", "Name": "STRING", "AlbumId": "NUMERIC", "MediaTypeId": "NUMERIC", "GenreId": "NUMERIC", "Composer": "STRING", "UnitPrice": "NUMERIC" },
+        "relations": { "albums": "tracks.AlbumId = albums.AlbumId", "genres": "tracks.GenreId = genres.GenreId", "media_types": "tracks.MediaTypeId = media_types.MediaTypeId", "invoice_items": "tracks.TrackId = invoice_items.TrackId", "playlist_track": "tracks.TrackId = playlist_track.TrackId" }
+    },
+    "playlists": {
+        "columns": { "PlaylistId": "NUMERIC", "Name": "STRING" },
+        "relations": { "playlist_track": "playlists.PlaylistId = playlist_track.PlaylistId" }
+    },
+    "playlist_track": {
+        "columns": { "PlaylistId": "NUMERIC", "TrackId": "NUMERIC" },
+        "relations": { "playlists": "playlist_track.PlaylistId = playlists.PlaylistId", "tracks": "playlist_track.TrackId = tracks.TrackId" }
+    }
+}
