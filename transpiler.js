@@ -158,88 +158,110 @@ function parser(tokens) {
         let tables = [];
         let whereClause = null;
         let orderByClause = null;
+        let limitClause = null;
 
         // Soporte a la sintaxis normal: MOSTRAR ... DE ...
         if (token.type === 'KEYWORD' && token.value.toUpperCase() === 'MOSTRAR') {
             current++;
-            
-            while (current < tokens.length && (tokens[current].type === 'IDENTIFIER' || tokens[current].type === 'PUNCTUATION' || (tokens[current].type === 'KEYWORD' && tokens[current].value.toUpperCase() === 'Y'))) {
-                if (tokens[current].type === 'IDENTIFIER' || tokens[current].value === '*') {
-                    columns.push(tokens[current].value);
-                }
-                current++;
-            }
 
-            if (columns.length === 0) {
-                let err = tokens[current] || tokens[current - 1] || {line: 1, column: 1};
-                throw new Error(`Error sintáctico: Se esperaba qué mostrar (ej. un Identificador) en la línea ${err.line}, columna ${err.column}.`);
-            }
-
-            token = tokens[current];
-            
-            if (token && token.type === 'KEYWORD' && token.value.toUpperCase() === 'DE') {
+            // Detectar "Muestra las 10 facturas..." → MOSTRAR NUMBER IDENTIFIER
+            // El NUMBER es un LIMIT implícito; la tabla es el IDENTIFIER que sigue
+            if (tokens[current] && tokens[current].type === 'NUMBER') {
+                limitClause = parseInt(tokens[current].value);
                 current++;
-                token = tokens[current];
-                if (!token || token.type !== 'IDENTIFIER') {
-                    let err = token || tokens[current-1];
-                    throw new Error(`Error sintáctico: Se esperaba un nombre de tabla después de DE en la línea ${err.line}, columna ${err.column}.`);
-                }
-                tables.push(token.value);
-                current++;
-
-                // Soporte a "DE tabla1 UNIR tabla2"
-                if (tokens[current] && tokens[current].type === 'KEYWORD' && tokens[current].value.toUpperCase() === 'UNIR') {
+                // El siguiente IDENTIFIER es la tabla, columns = '*'
+                if (tokens[current] && tokens[current].type === 'IDENTIFIER') {
+                    tables.push(tokens[current].value);
                     current++;
-                    if (tokens[current] && tokens[current].type === 'IDENTIFIER') {
-                        tables.push(tokens[current].value);
-                        current++;
-                    } else {
-                        let err = tokens[current] || tokens[current-1];
-                        throw new Error(`Error sintáctico: Se esperaba un nombre de tabla después de UNIR en la línea ${err.line}, columna ${err.column}.`);
-                    }
                 }
-            } else if (token && token.type === 'KEYWORD' && token.value.toUpperCase() === 'UNIR') {
-                // Soporte a "MOSTRAR * UNIR usuarios Y pedidos"
-                current++;
-                token = tokens[current];
-                if (!token || token.type !== 'IDENTIFIER') {
-                    let err = token || tokens[current-1];
-                    throw new Error(`Error sintáctico: Se esperaba el primer nombre de tabla en la línea ${err.line}, columna ${err.column}.`);
-                }
-                tables.push(token.value);
-                current++;
-
-                token = tokens[current];
-                if (!token || token.value.toUpperCase() !== 'Y') {
-                    let err = token || tokens[current-1];
-                    throw new Error(`Error sintáctico: Se esperaba 'Y' en la línea ${err.line}, columna ${err.column}.`);
-                }
-                current++;
-
-                token = tokens[current];
-                if (!token || token.type !== 'IDENTIFIER') {
-                    let err = token || tokens[current-1];
-                    throw new Error(`Error sintáctico: Se esperaba el segundo nombre de tabla en la línea ${err.line}, columna ${err.column}.`);
-                }
-                tables.push(token.value);
-                current++;
-            } else if (!token || (token.type === 'KEYWORD' && (token.value === 'DONDE' || token.value === 'ORDENAR'))) {
-                // SINTAXIS RELAJADA: Asumir que si omitieron el "DE", la única columna proporcionada era en realidad la tabla
-                if (columns.length === 1 && columns[0] !== '*') {
-                    tables.push(columns[0]);
-                    columns = ['*'];
-                } else if (columns.length === 2 && columns[0] === 'COUNT(*)') {
-                    // Soporte para sintaxis "cuantos artistas" -> columns = ['COUNT(*)', 'artists']
-                    tables.push(columns[1]);
-                    columns = ['COUNT(*)'];
-                } else {
-                    let err = token || tokens[current-1] || {line: 1, column: 1};
-                    throw new Error(`Error sintáctico: Faltó especificar la tabla de origen (usando 'DE') en la línea ${err.line}, columna ${err.column}.`);
-                }
+                columns = ['*'];
+                // Consumir DONDE/CON y lo que siga hasta ORDER
+                // (se seguirá procesando normalmente en los bloques de DONDE/ORDENAR abajo)
+                // Pasar al bloque de sintaxis relajada no es necesario aquí —
+                // el token actual puede ser DONDE/ORDENAR/DESC/etc.
             } else {
-                let err = token || tokens[current-1];
-                throw new Error(`Error sintáctico: Se esperaba 'DE' o 'UNIR' en la línea ${err.line}, columna ${err.column}.`);
+                while (current < tokens.length && (tokens[current].type === 'IDENTIFIER' || tokens[current].type === 'PUNCTUATION' || (tokens[current].type === 'KEYWORD' && tokens[current].value.toUpperCase() === 'Y'))) {
+                    if (tokens[current].type === 'IDENTIFIER' || tokens[current].value === '*') {
+                        columns.push(tokens[current].value);
+                    }
+                    current++;
+                }
+
+                if (columns.length === 0) {
+                    let err = tokens[current] || tokens[current - 1] || {line: 1, column: 1};
+                    throw new Error(`Error sintáctico: Se esperaba qué mostrar (ej. un Identificador) en la línea ${err.line}, columna ${err.column}.`);
+                }
             }
+
+
+            // Si la tabla ya fue capturada por el path MOSTRAR NUMBER, saltamos este bloque
+            if (tables.length === 0) {
+                token = tokens[current];
+
+                if (token && token.type === 'KEYWORD' && token.value.toUpperCase() === 'DE') {
+                    current++;
+                    token = tokens[current];
+                    if (!token || token.type !== 'IDENTIFIER') {
+                        let err = token || tokens[current-1];
+                        throw new Error(`Error sintáctico: Se esperaba un nombre de tabla después de DE en la línea ${err.line}, columna ${err.column}.`);
+                    }
+                    tables.push(token.value);
+                    current++;
+
+                    // Soporte a "DE tabla1 UNIR tabla2"
+                    if (tokens[current] && tokens[current].type === 'KEYWORD' && tokens[current].value.toUpperCase() === 'UNIR') {
+                        current++;
+                        if (tokens[current] && tokens[current].type === 'IDENTIFIER') {
+                            tables.push(tokens[current].value);
+                            current++;
+                        } else {
+                            let err = tokens[current] || tokens[current-1];
+                            throw new Error(`Error sintáctico: Se esperaba un nombre de tabla después de UNIR en la línea ${err.line}, columna ${err.column}.`);
+                        }
+                    }
+                } else if (token && token.type === 'KEYWORD' && token.value.toUpperCase() === 'UNIR') {
+                    // Soporte a "MOSTRAR * UNIR usuarios Y pedidos"
+                    current++;
+                    token = tokens[current];
+                    if (!token || token.type !== 'IDENTIFIER') {
+                        let err = token || tokens[current-1];
+                        throw new Error(`Error sintáctico: Se esperaba el primer nombre de tabla en la línea ${err.line}, columna ${err.column}.`);
+                    }
+                    tables.push(token.value);
+                    current++;
+
+                    token = tokens[current];
+                    if (!token || token.value.toUpperCase() !== 'Y') {
+                        let err = token || tokens[current-1];
+                        throw new Error(`Error sintáctico: Se esperaba 'Y' en la línea ${err.line}, columna ${err.column}.`);
+                    }
+                    current++;
+
+                    token = tokens[current];
+                    if (!token || token.type !== 'IDENTIFIER') {
+                        let err = token || tokens[current-1];
+                        throw new Error(`Error sintáctico: Se esperaba el segundo nombre de tabla en la línea ${err.line}, columna ${err.column}.`);
+                    }
+                    tables.push(token.value);
+                    current++;
+                } else if (!token || (token.type === 'KEYWORD' && (token.value === 'DONDE' || token.value === 'ORDENAR'))) {
+                    // SINTAXIS RELAJADA: Asumir que si omitieron el "DE", la única columna proporcionada era en realidad la tabla
+                    if (columns.length === 1 && columns[0] !== '*') {
+                        tables.push(columns[0]);
+                        columns = ['*'];
+                    } else if (columns.length === 2 && columns[0] === 'COUNT(*)') {
+                        tables.push(columns[1]);
+                        columns = ['COUNT(*)'];
+                    } else {
+                        let err = token || tokens[current-1] || {line: 1, column: 1};
+                        throw new Error(`Error sintáctico: Faltó especificar la tabla de origen (usando 'DE') en la línea ${err.line}, columna ${err.column}.`);
+                    }
+                } else {
+                    let err = token || tokens[current-1];
+                    throw new Error(`Error sintáctico: Se esperaba 'DE' o 'UNIR' en la línea ${err.line}, columna ${err.column}.`);
+                }
+            } // fin if (tables.length === 0)
+
         
         // Soporte a sintaxis "Joins Simplificados": UNIR usuarios Y pedidos
         } else if (token.type === 'KEYWORD' && token.value.toUpperCase() === 'UNIR') {
@@ -409,7 +431,6 @@ function parser(tokens) {
 
         // ── LIMIT ──
         token = tokens[current];
-        let limitClause = null;
         if (token && token.type === 'KEYWORD' && token.value === 'LIMITE') {
             current++;
             let numTok = tokens[current++];
