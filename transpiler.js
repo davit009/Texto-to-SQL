@@ -268,9 +268,51 @@ function parser(tokens) {
             tables.push(token.value);
             current++;
 
+        } else if (token.type === 'KEYWORD' && token.value.toUpperCase() === 'ORDENAR') {
+            // Sintaxis: "Ordena [columnas] de [tabla] [DESC|ASC]"
+            // Infiere SELECT columna FROM tabla ORDER BY columna
+            current++;
+
+            // Leer columnas hasta el próximo DE o fin
+            while (current < tokens.length &&
+                   (tokens[current].type === 'IDENTIFIER' || tokens[current].type === 'PUNCTUATION' ||
+                    (tokens[current].type === 'KEYWORD' && tokens[current].value === 'Y'))) {
+                if (tokens[current].type === 'IDENTIFIER' || tokens[current].value === '*') {
+                    columns.push(tokens[current].value);
+                }
+                current++;
+            }
+            if (columns.length === 0) columns = ['*'];
+
+            // Leer tabla si viene un DE
+            if (tokens[current] && tokens[current].value === 'DE') {
+                current++;
+                if (tokens[current] && tokens[current].type === 'IDENTIFIER') {
+                    tables.push(tokens[current].value);
+                    current++;
+                }
+            } else if (columns.length === 1 && columns[0] !== '*') {
+                // "ordena pistas" → columna es la tabla, selecciona todo
+                tables.push(columns[0]);
+                columns = ['*'];
+            }
+
+            // Columna de ORDER BY: primera columna seleccionada, o '*'
+            let orderCol = (columns[0] !== '*' && columns[0] !== 'COUNT(*)') ? columns[0] : (tables[0] || '*');
+            orderByClause = { column: orderCol, direction: 'ASC' };
+
+            // Consumir DE/ASC/DESC sobrantes (ej: "de forma alfabética")
+            while (tokens[current] && (tokens[current].value === 'DE' ||
+                   tokens[current].value === 'ASC' || tokens[current].value === 'DESC')) {
+                if (tokens[current].value === 'DESC') orderByClause.direction = 'DESC';
+                if (tokens[current].value === 'ASC')  orderByClause.direction = 'ASC';
+                current++;
+            }
+
         } else {
             throw new Error(`Error sintáctico: Toda consulta debe empezar con 'MOSTRAR' o 'UNIR'. Encontrado '${token.value}' en línea ${token.line}, columna ${token.column}.`);
         }
+
 
         // ── Análisis de WHERE (multiple conditions + LIKE + NULL + LLAMADO) ──
         token = tokens[current];
