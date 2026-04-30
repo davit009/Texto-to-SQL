@@ -30,13 +30,22 @@
     <header>
         <h1>Compilador DSL <span>Studio</span></h1>
         <div class="toolbar">
-            <button onclick="testQuery('quiero ver el nombre y el precio de las canciones donde el precio sea igual a 0.99')">Consulta Natural</button>
-            <button onclick="testQuery('dime el numero de artistas')">Test de Agregación</button>
-            <button onclick="testQuery('muestrame los empleados ordenados por apellido')">Test Ordenamiento</button>
-            <button onclick="testQuery('UNIR artistas Y albumes')">Test Joins</button>
-            <button onclick="openSchemaModal()" style="border-color: var(--accent); color: var(--accent);">📊 Ver Esquema BD</button>
+            <button onclick="testQuery('muestra nombre de artists')">① Artistas</button>
+            <button onclick="testQuery('dame titulo de albums donde ArtistId igual a 5')">② Albums ID=5</button>
+            <button onclick="testQuery(&quot;listar nombre apellido de employees donde City igual a \'Calgary\'&quot;)">③ Empleados Calgary</button>
+            <button onclick="testQuery(&quot;dame nombre de tracks donde nombre que empiece con \'A\'&quot;)">④ LIKE empieza A</button>
+            <button onclick="testQuery(&quot;dame nombre City de customers donde Country igual a \'Brazil\' O Country igual a \'Germany\'&quot;)">⑤ OR Brasil/Alemania</button>
+            <button onclick="testQuery(&quot;muestra Total de invoices donde Total mayor a 15 Y BillingCity igual a \'Oslo\'&quot;)">⑥ AND Total+Ciudad</button>
+            <button onclick="testQuery('listar nombre de tracks donde Composer sin')">⑦ IS NULL</button>
+            <button onclick="testQuery('ordena nombre de tracks')">⑧ ORDER ASC</button>
+            <button onclick="testQuery('muestra 10 invoices ordenados por Total descendente')">⑨ TOP 10 DESC</button>
+            <button onclick="testQuery('cuantos artistas hay')">⑩ COUNT</button>
+            <button onclick="testQuery('suma Total de invoices')">⑪ SUM</button>
+            <button onclick="testQuery('dame nombre de tracks unir genres')">⑫ JOIN</button>
+            <button onclick="openSchemaModal()" style="border-color: var(--accent); color: var(--accent);">📊 Esquema BD</button>
             <button onclick="toggleHistory()" style="border-color:#a855f7; color:#a855f7;">📋 Historial</button>
         </div>
+
     </header>
 
     <main>
